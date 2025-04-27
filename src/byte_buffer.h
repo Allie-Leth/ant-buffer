@@ -31,21 +31,21 @@ public:
      *
      * After this call, writePosition() == 0 and writeRemaining() == capacity().
      */
-    void resetWrite() { write_pos_ = 0; }
+    void resetWrite() { head_ = 0; }
 
     /**
      * @brief Get the current write index.
      *
      * @return Zero-based index where the next write will occur.
      */
-    size_t writePosition() const { return write_pos_; }
+    size_t writePosition() const { return head_; }
 
     /**
      * @brief How many bytes you can still write before overflowing.
      *
      * @return capacity() - writePosition().
      */
-    size_t writeRemaining() const { return (write_pos_ < capacity_) ? (capacity_ - write_pos_) : 0; }
+    size_t writeRemaining() const { return (head_ < capacity_) ? (capacity_ - head_) : 0; }
 
     //-------------------------------------------------------------------------
     // Read-side API
@@ -56,21 +56,21 @@ public:
      * Does _not_ erase data—you can re-read what was previously written.
      * After this call, readPosition() == 0 and readRemaining() == writePosition().
      */
-    void resetRead() { read_pos_ = 0; }
+    void resetRead() { tail_ = 0; }
 
     /**
      * @brief Get the current read index.
      *
      * @return Zero-based index where the next read will occur.
      */
-    size_t readPosition() const { return read_pos_; }
+    size_t readPosition() const { return tail_; }
 
     /**
      * @brief How many bytes remain available to read.
      *
      * @return writePosition() - readPosition().
      */
-    size_t readRemaining() const { return (read_pos_ < write_pos_) ? (write_pos_ - read_pos_) : 0; }
+    size_t readRemaining() const { return (tail_ < head_) ? (head_ - tail_) : 0; }
 
     //-------------------------------------------------------------------------
     // Shared
@@ -94,7 +94,7 @@ public:
     bool readUInt8(uint8_t &out)
     {
         if (readRemaining() < 1) return false;
-        out = data_[read_pos_++];
+        out = data_[tail_++];
         return true;
     }
 
@@ -107,7 +107,7 @@ public:
     bool writeUInt8(uint8_t v)
     {
         if (writeRemaining() < 1) return false;
-        data_[write_pos_++] = v;
+        data_[head_++] = v;
         return true;
     }
 
@@ -123,9 +123,9 @@ public:
     bool readUInt16LE(uint16_t &out)
     {
         if (readRemaining() < 2) return false;
-        out = uint16_t(data_[read_pos_])
-            | (uint16_t(data_[read_pos_ + 1]) << 8);
-        read_pos_ += 2;
+        out = uint16_t(data_[tail_])
+            | (uint16_t(data_[tail_ + 1]) << 8);
+        tail_ += 2;
         return true;
     }
 
@@ -138,9 +138,9 @@ public:
     bool readUInt16BE(uint16_t &out)
     {
         if (readRemaining() < 2) return false;
-        out = (uint16_t(data_[read_pos_]) << 8)
-            |  uint16_t(data_[read_pos_ + 1]);
-        read_pos_ += 2;
+        out = (uint16_t(data_[tail_]) << 8)
+            |  uint16_t(data_[tail_ + 1]);
+        tail_ += 2;
         return true;
     }
 
@@ -153,9 +153,9 @@ public:
     bool writeUInt16LE(uint16_t v)
     {
         if (writeRemaining() < 2) return false;
-        data_[write_pos_]     = uint8_t( v        & 0xFF);
-        data_[write_pos_ + 1] = uint8_t((v >> 8)  & 0xFF);
-        write_pos_ += 2;
+        data_[head_]     = uint8_t( v        & 0xFF);
+        data_[head_ + 1] = uint8_t((v >> 8)  & 0xFF);
+        head_ += 2;
         return true;
     }
 
@@ -168,9 +168,9 @@ public:
     bool writeUInt16BE(uint16_t v)
     {
         if (writeRemaining() < 2) return false;
-        data_[write_pos_]     = uint8_t((v >> 8)  & 0xFF);
-        data_[write_pos_ + 1] = uint8_t( v        & 0xFF);
-        write_pos_ += 2;
+        data_[head_]     = uint8_t((v >> 8)  & 0xFF);
+        data_[head_ + 1] = uint8_t( v        & 0xFF);
+        head_ += 2;
         return true;
     }
 
@@ -186,11 +186,11 @@ public:
     bool readUInt32LE(uint32_t &out)
     {
         if (readRemaining() < 4) return false;
-        out =  uint32_t(data_[read_pos_])
-            |  (uint32_t(data_[read_pos_ + 1]) << 8)
-            |  (uint32_t(data_[read_pos_ + 2]) << 16)
-            |  (uint32_t(data_[read_pos_ + 3]) << 24);
-        read_pos_ += 4;
+        out =  uint32_t(data_[tail_])
+            |  (uint32_t(data_[tail_ + 1]) << 8)
+            |  (uint32_t(data_[tail_ + 2]) << 16)
+            |  (uint32_t(data_[tail_ + 3]) << 24);
+        tail_ += 4;
         return true;
     }
 
@@ -203,11 +203,11 @@ public:
     bool readUInt32BE(uint32_t &out)
     {
         if (readRemaining() < 4) return false;
-        out = (uint32_t(data_[read_pos_]) << 24)
-            | (uint32_t(data_[read_pos_ + 1]) << 16)
-            | (uint32_t(data_[read_pos_ + 2]) << 8)
-            |  uint32_t(data_[read_pos_ + 3]);
-        read_pos_ += 4;
+        out = (uint32_t(data_[tail_]) << 24)
+            | (uint32_t(data_[tail_ + 1]) << 16)
+            | (uint32_t(data_[tail_ + 2]) << 8)
+            |  uint32_t(data_[tail_ + 3]);
+        tail_ += 4;
         return true;
     }
 
@@ -220,11 +220,11 @@ public:
     bool writeUInt32LE(uint32_t v)
     {
         if (writeRemaining() < 4) return false;
-        data_[write_pos_]     = uint8_t( v        & 0xFF);
-        data_[write_pos_ + 1] = uint8_t((v >> 8)  & 0xFF);
-        data_[write_pos_ + 2] = uint8_t((v >> 16) & 0xFF);
-        data_[write_pos_ + 3] = uint8_t((v >> 24) & 0xFF);
-        write_pos_ += 4;
+        data_[head_]     = uint8_t( v        & 0xFF);
+        data_[head_ + 1] = uint8_t((v >> 8)  & 0xFF);
+        data_[head_ + 2] = uint8_t((v >> 16) & 0xFF);
+        data_[head_ + 3] = uint8_t((v >> 24) & 0xFF);
+        head_ += 4;
         return true;
     }
 
@@ -237,17 +237,17 @@ public:
     bool writeUInt32BE(uint32_t v)
     {
         if (writeRemaining() < 4) return false;
-        data_[write_pos_]     = uint8_t((v >> 24) & 0xFF);
-        data_[write_pos_ + 1] = uint8_t((v >> 16) & 0xFF);
-        data_[write_pos_ + 2] = uint8_t((v >> 8)  & 0xFF);
-        data_[write_pos_ + 3] = uint8_t( v        & 0xFF);
-        write_pos_ += 4;
+        data_[head_]     = uint8_t((v >> 24) & 0xFF);
+        data_[head_ + 1] = uint8_t((v >> 16) & 0xFF);
+        data_[head_ + 2] = uint8_t((v >> 8)  & 0xFF);
+        data_[head_ + 3] = uint8_t( v        & 0xFF);
+        head_ += 4;
         return true;
     }
 
 private:
     uint8_t *data_;       /**< Pointer to the external byte array. */
     size_t   capacity_;   /**< Total size of the array in bytes. */
-    size_t   write_pos_ = 0;  /**< Next index to write. */
-    size_t   read_pos_  = 0;  /**< Next index to read. */
+    size_t   head_ = 0;  /**< Next index to write. */
+    size_t   tail_  = 0;  /**< Next index to read. */
 };

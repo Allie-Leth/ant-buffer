@@ -1,0 +1,18 @@
+# ==== build ====
+build/
+build-*
+build-*
+
+# ==== coverage ====
+coverage/
+
+# ==== VSCode ====
+.vscode/
+.vscode-test/
+.vscode-test-*
+.vscode-test-*
+.vscode-test-*
+*.code-workspace
+
+# ==== Tests ====
+*.hpp

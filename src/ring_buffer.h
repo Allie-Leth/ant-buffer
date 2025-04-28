@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <utility>
-
+namespace antBuffers {
 /**
  * @brief Fixed-capacity, in-memory circular buffer (ring buffer) template.
  *
@@ -124,3 +124,4 @@ private:
     size_t tail_  = 0;/**< Index for next pop. */
     size_t count_ = 0;/**< Current number of elements. */
 };
+}; // namespace antBuffers

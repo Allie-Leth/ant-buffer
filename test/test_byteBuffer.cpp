@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
-#include "byte_buffer.h"
+#include <byte_buffer.h>
 #include <cstdint>
 
 /**

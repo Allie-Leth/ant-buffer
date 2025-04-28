@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
+namespace antBuffers {
 /**
  * @file byte_buffer.h
  * @brief Simple sequential reader/writer over a raw byte buffer with endianness helpers.
@@ -250,4 +251,5 @@ private:
     size_t   capacity_;   /**< Total size of the array in bytes. */
     size_t   head_ = 0;  /**< Next index to write. */
     size_t   tail_  = 0;  /**< Next index to read. */
+};
 };

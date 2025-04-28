@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
+namespace antBuffers {
 /**
  * @file message_buffer.h
  * @brief Minimal framed message reader/writer over a byte buffer.
@@ -150,3 +151,4 @@ private:
 
     static constexpr size_t headerSize_ = 2; /**< Bytes reserved for header: [type][length]. */
 };
+}; // namespace antBuffers

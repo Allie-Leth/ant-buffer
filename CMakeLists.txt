@@ -1,83 +1,61 @@
 cmake_minimum_required(VERSION 3.14)
 project(BufferUtilsTests LANGUAGES CXX)
 
-# ---------------------------------------------------------------------------
-#  Coverage support (gcc/clang + lcov)
-# ---------------------------------------------------------------------------
-option(ENABLE_COVERAGE "Enable gcov/lcov code coverage" ON)
-
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(COVERAGE_AVAILABLE FALSE)
-if(ENABLE_COVERAGE AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"))
-  # Try to locate lcov in common MSYS2 / MinGW paths
-  find_program(LCOV_PATH
-    NAMES lcov lcov.exe
-    PATHS
-      "$ENV{MINGW_PREFIX}/bin"
-      "C:/msys64/mingw64/bin"
-      "C:/msys64/ucrt64/bin"
-  )
-  if(LCOV_PATH)
-    message(STATUS "Building with code coverage enabled (lcov: ${LCOV_PATH})")
-    add_compile_options(-O0 -g --coverage)
-    add_link_options(--coverage)
-    set(COVERAGE_AVAILABLE TRUE)
-  else()
-    message(WARNING "lcov not found – coverage target will be skipped")
-  endif()
+# --------------------------------------------------
+# Coverage option
+# --------------------------------------------------
+option(CODE_COVERAGE "Build with --coverage" ON)
+
+# Lists (no quotes → each flag is its own list element)
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set(COVERAGE_COMPILE_FLAGS -O0 -g --coverage)
+    set(COVERAGE_LINK_FLAGS    --coverage)
 endif()
 
-# ---------------------------------------------------------------------------
-#  Header-only buffer utilities library
-# ---------------------------------------------------------------------------
+# --------------------------------------------------
+# Header-only libs
+# --------------------------------------------------
 add_library(buffer_utils INTERFACE)
-target_include_directories(buffer_utils INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(buffer_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# ---------------------------------------------------------------------------
-#  Header-only Catch2 (single header lives in test/)
-# ---------------------------------------------------------------------------
 add_library(Catch2 INTERFACE)
-target_include_directories(Catch2 INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/test)
+target_include_directories(Catch2 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/test)
 
-# ---------------------------------------------------------------------------
-#  Collect and register tests
-# ---------------------------------------------------------------------------
+# --------------------------------------------------
+# Discover & build tests
+# --------------------------------------------------
 enable_testing()
 file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test/test_*.cpp")
-set(TEST_TARGETS "")
 
-foreach(src ${TEST_SOURCES})
-  get_filename_component(name ${src} NAME_WE)
-  add_executable(${name} ${src})
-  target_link_libraries(${name} PRIVATE buffer_utils Catch2)
-  add_test(NAME ${name} COMMAND ${name})
-  list(APPEND TEST_TARGETS ${name})
-  message(STATUS "Added test target: ${name}")
+foreach(TEST_SRC IN LISTS TEST_SOURCES)
+    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
+    add_executable(${TEST_NAME} ${TEST_SRC})
+
+    if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${TEST_NAME} PRIVATE -O0 -g --coverage)
+        target_link_options   (${TEST_NAME} PRIVATE --coverage)
+    endif()
+
+    target_link_libraries(${TEST_NAME} PRIVATE buffer_utils Catch2)
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
 
-# ---------------------------------------------------------------------------
-#  Custom "run_tests" target – builds all tests then runs them
-# ---------------------------------------------------------------------------
-add_custom_target(run_tests
-  DEPENDS ${TEST_TARGETS}
-  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-  COMMENT "Building and running all unit tests"
-  VERBATIM)
 
-# ---------------------------------------------------------------------------
-#  Custom "coverage" target – run tests then generate lcov report
-# ---------------------------------------------------------------------------
-if(COVERAGE_AVAILABLE)
-  add_custom_target(coverage
-    DEPENDS run_tests
-    COMMAND ${LCOV_PATH} --capture --directory ${CMAKE_BINARY_DIR} --output-file coverage.info
-    COMMAND ${LCOV_PATH} --remove coverage.info "/usr/*" "*/catch.hpp" --output-file coverage.filtered.info
+add_custom_target(coverage
+    # 1) run all tests – this writes the .gcda files
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+
+    # 2-4) run lcov + genhtml **inside MSYS2 Bash**
+    COMMAND C:\\msys64\\usr\\bin\\bash.exe -lc
+            "lcov  --directory '${CMAKE_BINARY_DIR}' \
+                    --capture         --output-file coverage.info  && \
+             lcov  --remove  coverage.info '/usr/*' 'C:/msys64/*' \
+                    --output-file coverage.cleaned.info            && \
+             genhtml coverage.cleaned.info --output-directory coverage_html"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Generating coverage report: coverage.filtered.info"
-    VERBATIM)
-endif()
+    COMMENT \"Generating LCOV report in build/coverage_html\"
+)

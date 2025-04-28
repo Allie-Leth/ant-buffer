@@ -3,6 +3,9 @@
 #include <byte_buffer.h>
 #include <cstdint>
 
+using antBuffers::ByteBuffer;
+
+
 /**
  * @brief Fixture providing an 8-byte buffer for default tests.
  */

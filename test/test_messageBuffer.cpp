@@ -3,6 +3,7 @@
 #include "message_buffer.h"
 #include <cstdint>
 
+using antBuffers::MessageBuffer;
 /**
  * @brief Fixture providing an 8-byte buffer for default MessageBuffer tests.
  */

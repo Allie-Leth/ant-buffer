@@ -3,6 +3,8 @@
 #include "ring_buffer.h"
 #include <string>
 
+using antBuffers::RingBuffer;
+
 // 1) Capacity check
 TEST_CASE("capacity() returns compile-time capacity", "[RingBuffer][Capacity]") {
     constexpr size_t CAP = 4;
